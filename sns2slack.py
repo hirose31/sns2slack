@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # vi: set ft=python fenc=utf-8 ff=unix :
 
+from base64 import b64decode
 import json
 import logging
 import os
-from base64 import b64decode
 from urllib.error import (
     HTTPError,
     URLError,
@@ -59,20 +59,20 @@ def processSES(message):
     mail_subject = message['mail']['commonHeaders']['subject']
     detail = ''
     if 'bounce' in message:
-        detail = '\n'.join(
+        detail = '\n'.join([
             f"Bounce Type: {message['bounce']['bounceType']}",
             f"Bounce Sub Type: {message['bounce']['bounceSubType']}",
             'Bounce Recipients: ' + '\n  '.join(
                 [f"{b['emailAddress']} (status: {b['status']} action: {b['action']})"
                  for b in message['bounce']['bouncedRecipients']]),
-        )
+        ])
     elif 'complaint' in message:
-        detail = '\n'.join(
+        detail = '\n'.join([
             f"Complaint Feedback Type: {message['complaint']['complaintFeedbackType']}",
             'Complained Recipients: ' + '\n  '.join(
                 [f"{b['emailAddress']}"
                  for b in message['complaint']['complaintRecipients']]),
-        )
+        ])
 
     slack_message = {
         'text': f"[*SES*] {message['notificationType']}\nFrom: {mail_from}\nTo: {mail_to}\nSubject: {mail_subject}\n{detail}",
