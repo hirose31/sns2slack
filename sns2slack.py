@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # vi: set ft=python fenc=utf-8 ff=unix :
 
-from base64 import b64decode
 import json
 import logging
 import os
+from base64 import b64decode
 from urllib.error import (
     HTTPError,
     URLError,
@@ -82,18 +82,24 @@ def processSES(message):
 
 
 def lambda_handler(event, context):
-    logger.info("Event: " + str(event))
-    message = json.loads(event['Records'][0]['Sns']['Message'])
-    logger.info("Message: " + str(message))
+    try:
+        logger.info("Event: " + str(event))
+        message = json.loads(event['Records'][0]['Sns']['Message'])
+        logger.info("Message: " + str(message))
 
-    # https://api.slack.com/reference/messaging/payload
-    if 'AlarmName' in message:
-        slack_message = processCloudWatch(message)
-    elif 'mail' in message:
-        slack_message = processSES(message)
-    else:
+        # https://api.slack.com/reference/messaging/payload
+        if 'AlarmName' in message:
+            slack_message = processCloudWatch(message)
+        elif 'mail' in message:
+            slack_message = processSES(message)
+        else:
+            slack_message = {
+                'text': f'unknown event: {json.dumps(message)}',
+            }
+    except Exception as e:
+        logger.error("error: %s", e)
         slack_message = {
-            'text': f'unknown event: {json.dumps(message)}',
+            'text': f'error: {e}'
         }
 
     slack_message['channel'] = SLACK_CHANNEL
